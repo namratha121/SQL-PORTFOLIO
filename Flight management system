@@ -30,9 +30,8 @@ where t1.rnk =1
 
 
 
-5.	In the database, identify the month wise least paying passenger name and passenger id?
-
-Answer: select month, passenger_id, passenger_name, total_amount from
+--5.	In the database, identify the month wise least paying passenger name and passenger id?
+ select month, passenger_id, passenger_name, total_amount from
 (select to_char(b.book_date,'mon-yy') as month, t.passenger_id, t.passenger_name , sum(b.total_amount) as total_amount,
 rank() over(partition by to_char(b.book_date,'mon-yy') order by sum(b.total_amount) asc) as rnk
 from bookings b join tickets t
@@ -42,29 +41,23 @@ group by 1,2,3
 where t1.rnk =1
 
 
-6.	Identify the travel details of non stop journeys  or return journeys (having more than 1 flight).
-Expected Output: Passenger_id, passenger_name, ticket_number and flight count.
-
-Answer:  select t.passenger_id, t.passenger_name, t.ticket_no, count(tf.flight_id) as flight_count
+--6.	Identify the travel details of non stop journeys  or return journeys (having more than 1 flight).
+  select t.passenger_id, t.passenger_name, t.ticket_no, count(tf.flight_id) as flight_count
  from tickets t join ticket_flights tf 
  on t.ticket_no=tf.ticket_no
  group by 1,2,3
  having count(tf.flight_id)=1 or count(tf.flight_id)>1
 
 
-7.	How many tickets are there without boarding passes?
-Expected Output: just one number is required.
-
-Answer:  select count(t.ticket_no) from tickets t left join boarding_passes b on
+--7.	How many tickets are there without boarding passes?
+ select count(t.ticket_no) from tickets t left join boarding_passes b on
 t.ticket_no = b.ticket_no
 where b.ticket_no is null
 
 
 
-8.	Identify details of the longest flight (using flights table)?
-Expected Output: Flight number, departure airport, arrival airport, aircraft code and durations.
-
-Answer:  select distinct(flight_no), departure_airport, arrival_airport, aircraft_code,  duration  from (
+--8.	Identify details of the longest flight (using flights table)?
+ select distinct(flight_no), departure_airport, arrival_airport, aircraft_code,  duration  from (
  select  distinct(flight_no), departure_airport, arrival_airport, aircraft_code, scheduled_arrival - scheduled_departure as duration 
  ,rank() over(order by scheduled_arrival - scheduled_departure desc ) as rnk
  from flights) t1
@@ -74,10 +67,8 @@ Answer:  select distinct(flight_no), departure_airport, arrival_airport, aircraf
 
 
 
-9.	Identify details of all the morning flights (morning means between 6AM to 11 AM, using flights table)?
-Expected output: flight_id, flight_number, scheduled_departure, scheduled_arrival and timings.
-
-Answer: select  flight_id, flight_no, scheduled_departure, scheduled_arrival,
+--9.	Identify details of all the morning flights (morning means between 6AM to 11 AM, using flights table)?
+select  flight_id, flight_no, scheduled_departure, scheduled_arrival,
 case when cast(scheduled_departure as time) >='06:00:00' and cast(scheduled_departure as time)<='11:00:00'
 then 'morning' 
 when cast(scheduled_departure as time)>='02:00:00' and cast(scheduled_departure as time)<'06:00:00'
@@ -91,12 +82,206 @@ where cast(scheduled_departure as time) between '06:00:00' and '11:00:00'
 
 
 
-10.	Identify the earliest morning flight available from every airport.
-Expected output: flight_id, flight_number, scheduled_departure, scheduled_arrival, departure airport and timings.
-Answer: select * from(
+--10.	Identify the earliest morning flight available from every airport.
+ select * from(
 select  flight_id, flight_no, scheduled_departure, scheduled_arrival, departure_airport,
 case when cast(scheduled_departure as time) >='06:00:00' and cast(scheduled_departure as time)<='11:00:00'
 then 'morning' 
 when cast(scheduled_departure as time)>='02:00:00' and cast(scheduled_departure as time)<'06:00:00'
 then 'early morning'
 else 'not morning'
+end as timings, row_number() over(partition by departure_airport order by cast(scheduled_departure as time) asc) as rnk
+from flights
+where cast(scheduled_departure as time) between '02:00:00' and '11:00:00'
+)t1
+where t1.rnk =1
+order by departure_airport
+
+--11.	Questions: Find list of airport codes in Europe/Moscow timezone
+ select Airport_code
+ from airports where timezone = 'Europe/Moscow'
+
+--12.	Write a query to get the count of seats in various fare condition for every aircraft code?
+select Aircraft_code, fare_conditions ,count(seat_no)
+from seats 
+ group by 1,2
+order by 1
+
+
+--13.	How many aircrafts codes have at least one Business class seats?
+  select count(distinct(aircraft_code)) from seats
+where fare_conditions='Business' 
+
+
+--14.	Find out the name of the airport having maximum number of departure flight
+  select  a.Airport_name
+ from flights f join airports a 
+ on a.airport_code = f.departure_airport
+ group by 1
+ order by count(f.departure_airport) desc
+ limit 1
+
+
+--15.	Find out the name of the airport having least number of scheduled departure flights
+ select  a.Airport_name
+ from flights f join airports a 
+ on a.airport_code = f.departure_airport
+ group by 1
+ order by count(f.departure_airport) asc
+ limit 1
+
+
+--16.	How many flights from ‘DME’ airport don’t have actual departure?
+ select count(scheduled_departure)- count(actual_departure) as flight_count from flights
+where departure_airport='DME'
+
+
+--17.	Identify flight ids having range between 3000 to 6000
+  select distinct f.flight_no, a.Aircraft_code, a.range 
+from aircrafts a
+join flights f 
+on a.Aircraft_code=f.Aircraft_code
+where a.range between 3000 and 6000
+order by 2
+
+
+
+--18.	Write a query to get the count of flights flying between URS and KUF?
+  
+select count(flight_id)
+from flights
+where (departure_airport = 'URS' AND 
+arrival_airport='KUF') or (departure_airport='KUF' and arrival_airport='URS')
+
+
+
+
+--19.	Write a query to get the count of flights flying from either from NOZ or KRR?
+ SELECT COUNT(FLIGHT_NO) AS FLIGHT_COUNT
+FROM flights
+WHERE DEPARTURE_AIRPORT='NOZ' OR DEPARTURE_AIRPORT='KRR'
+
+
+
+--20.	Write a query to get the count of flights flying from KZN,DME,NBC,NJC,GDX,SGC,VKO,ROV
+ SELECT DEPARTURE_AIRPORT,COUNT(FLIGHT_NO) AS FLIGHT_COUNT
+FROM flights
+WHERE DEPARTURE_AIRPORT IN ('KZN','DME','NBC','NJC','GDX','SGC','VKO','ROV')
+GROUP BY 1
+
+
+--21.	Write a query to extract flight details having range between 3000 and 6000 and flying from DME
+ select f.flight_no, a.Aircraft_code, a.range, f.departure_airport
+from aircrafts a
+join flights f 
+on a.Aircraft_code=f.Aircraft_code
+where a.range between 3000 and 6000
+and departure_airport='DME'
+
+
+
+--22.	Find the list of flight ids which are using aircrafts from “Airbus” company and got cancelled or delayed
+ select f.flight_id, a.model as aircrafts_model
+from flights f  join aircrafts a 
+on a.aircraft_code = f.aircraft_code
+where a.model like '%Airbus%' and
+(f.status = 'Delayed' or f.status='Cancelled')
+
+
+
+--23.	Find the list of flight ids which are using aircrafts from “Boeing” company and got cancelled or delayed
+ select f.flight_id, a.model as aircrafts_model
+from flights f  join aircrafts a 
+on a.aircraft_code = f.aircraft_code
+where a.model like '%Boeing%' and
+(f.status = 'Delayed' or f.status='Cancelled')
+
+
+
+--24.	Which airport(name) has most cancelled flights (arriving)?
+ 
+select airport_name from(
+select  a.airport_name, count(*),rank() over(order by count(airport_name) desc) rnk
+from flights f  join airports a 
+on a.airport_code = f.arrival_airport
+where f.status='Cancelled'
+group by 1
+) t1
+where t1.rnk = 1
+
+
+
+--25.	Identify flight ids which are using “Airbus aircrafts”
+ select f.flight_id, a.model as aircrafts_model
+from flights f  join aircrafts a 
+on a.aircraft_code = f.aircraft_code
+where a.model like '%Airbus%'
+
+
+
+--26.	Identify date-wise last flight id flying from every airport?
+ with t1 as(
+    select f.Flight_id,f.flight_no,f.scheduled_departure,f.departure_airport,
+    max(scheduled_departure) over(partition by departure_airport, date(scheduled_departure)) 
+    as depart 
+from flights as f)
+
+select Flight_id,flight_no,scheduled_departure,departure_airport from t1
+where scheduled_departure=depart 
+order by 3
+
+
+
+
+--27.	Identify list of customers who will get the refund due to cancellation of the flights and how much amount they will get?
+ with table1 as 
+(
+   SELECT 
+t.passenger_name,
+sum(b.total_amount) as amount
+FROM TICKETS t 
+LEFT JOIN BOARDING_PASSES bp ON bp.ticket_no = t.ticket_no
+LEFT JOIN BOOKINGS B ON t.book_ref = b.book_ref
+WHERE bp.ticket_no IS NULL
+group by 1)
+
+SELECT 
+t1.passenger_name,
+t1.amount as total_refund
+from table1 t1
+order by 1 asc
+
+
+
+--28.	Identify date wise first cancelled flight id flying for every airport?
+ select * from(
+select Flight_id,flight_no,scheduled_departure,departure_airport, row_number() 
+over(partition by departure_airport order by scheduled_departure asc) rnk 
+from flights
+where status='Cancelled')t1
+where t1.rnk =1
+order by scheduled_departure
+
+
+--29.	Identify list of Airbus flight ids which got cancelled.
+select f.flight_id
+from flights f  join aircrafts a 
+on a.aircraft_code = f.aircraft_code
+where a.model like '%Airbus%' and
+f.status='Cancelled'
+
+
+--30.	Identify list of flight ids having highest range.
+ select distinct(flight_no),range from (
+select f.flight_no, a.range, rank() over(order by range desc) rnk
+from flights f  join aircrafts a 
+on a.aircraft_code = f.aircraft_code) t1 
+where t1.rnk = 1
+
+
+
+
+
+
+
+
