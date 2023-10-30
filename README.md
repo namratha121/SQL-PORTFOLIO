@@ -1,4 +1,4 @@
-# SQL-PORTFOLIO
+[AirlineDB.pdf](https://github.com/namratha121/SQL-PORTFOLIO/files/13201455/AirlineDB.pdf)# SQL-PORTFOLIO
 This project uses an airline database.  
 The database contains the flights data related to transactions, tickets, flights, airports and flight schedules.
 
@@ -29,3 +29,6 @@ travel classes depends on the model of the aircraft (aircrafts) performing the f
 assumed that every aircraft model has only one cabin configuration. Database schema
 does not check that seat numbers in boarding passes have the corresponding seats in
 the aircraft
+
+
+[AirlineDB.pdf](https://github.com/namratha121/SQL-PORTFOLIO/files/13201459/AirlineDB.pdf)
